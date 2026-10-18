@@ -1,0 +1,262 @@
+@import "tailwindcss";
+
+/*
+ * `stack:` = the pinned, stacked project experience: desktop width AND motion allowed.
+ * It mirrors useStackedMode() in lib/use-media-query.ts, but is pure CSS so the layout
+ * (sticky, heights) is correct before JavaScript runs and never shifts after hydration.
+ */
+@custom-variant stack (@media (min-width: 64rem) and (prefers-reduced-motion: no-preference));
+
+/* -------------------------------------------------------------------------- */
+/* Design tokens                                                              */
+/* -------------------------------------------------------------------------- */
+
+@theme {
+  /*
+   * Signature teal palette (from the supplied reference), each with ONE job:
+   *   aqua     #A5E6E2  tints, highlighter marks, large soft surfaces
+   *   lagoon   #77DAD7  accents on dark surfaces, secondary panels
+   *   seaglass #36B8B7  primary interactive fill, active states
+   *   deepsea  #0A858C  large type, graphics, focus ring (3.9:1 on paper)
+   *   fjord    #0B757B  accent TEXT on light grounds (4.8:1) and light-text panels
+   */
+  --color-aqua: #a5e6e2;
+  --color-lagoon: #77dad7;
+  --color-seaglass: #36b8b7;
+  --color-deepsea: #0a858c;
+  --color-fjord: #0b757b;
+
+  /* Restrained neutrals: deep ink, warm paper, and two readable greys. */
+  --color-ink: #062326;
+  --color-ink-soft: #0d3033;
+  --color-ink-muted: #3d5a5c;
+  --color-paper: #f4f1ea;
+  --color-paper-muted: #a9cfcc;
+  --color-mist: #e3f3f0;
+
+  --ease-expo: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --shadow-frame:
+    0 40px 80px -30px rgb(3 25 27 / 0.55), 0 14px 28px -14px rgb(3 25 27 / 0.3);
+  --shadow-card: 0 -24px 60px -24px rgb(0 0 0 / 0.55);
+}
+
+/* Font families come from next/font CSS variables, so they must be inlined. */
+@theme inline {
+  --font-display: var(--font-instrument-serif), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-hanken-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Base                                                                       */
+/* -------------------------------------------------------------------------- */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5.5rem;
+    scrollbar-gutter: stable;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    background-image: url("/textures/grain.png");
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    /* clip (not hidden) so position: sticky keeps working in the stacked project section */
+    overflow-x: clip;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: var(--color-seaglass);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring, var(--color-deepsea));
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Utilities                                                                  */
+/* -------------------------------------------------------------------------- */
+
+/* Small technical annotations: mono, tracked, uppercase. */
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Components                                                                 */
+/* -------------------------------------------------------------------------- */
+
+@layer components {
+  .on-dark {
+    --focus-ring: var(--color-lagoon);
+  }
+
+  .skip-link {
+    position: fixed;
+    left: 1rem;
+    top: 1rem;
+    z-index: 100;
+    transform: translateY(-220%);
+    border-radius: 999px;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    padding: 0.75rem 1.25rem;
+    font-weight: 500;
+    transition: transform 0.25s var(--ease-expo);
+  }
+  .skip-link:focus {
+    transform: none;
+    --focus-ring: var(--color-lagoon);
+  }
+
+  /* Decorative blueprint texture and hairline columns. */
+  .bg-dots {
+    background-image: radial-gradient(circle, rgb(6 35 38 / 0.2) 1px, transparent 1.3px);
+    background-size: 18px 18px;
+  }
+  .grid-lines {
+    background-image: linear-gradient(to right, rgb(6 35 38 / 0.08) 1px, transparent 1px);
+    background-size: calc(100% / 6) 100%;
+  }
+
+  /* ---- Project panel tones -------------------------------------------------
+     Every panel surface comes from the palette; text colours are solid (never
+     opacity-based) so contrast stays >= 4.5:1 on each surface. */
+  [data-tone="ink"] {
+    --panel-bg: var(--color-ink-soft);
+    --panel-fg: var(--color-paper);
+    --panel-muted: var(--color-paper-muted);
+    --panel-line: rgb(244 241 234 / 0.18);
+    --panel-chip: rgb(244 241 234 / 0.09);
+    --panel-numeral: rgb(119 218 215 / 0.2);
+  }
+  [data-tone="aqua"] {
+    --panel-bg: var(--color-aqua);
+    --panel-fg: var(--color-ink);
+    --panel-muted: #1f4a4d;
+    --panel-line: rgb(6 35 38 / 0.2);
+    --panel-chip: rgb(6 35 38 / 0.08);
+    --panel-numeral: rgb(11 117 123 / 0.22);
+  }
+  [data-tone="paper"] {
+    --panel-bg: var(--color-paper);
+    --panel-fg: var(--color-ink);
+    --panel-muted: var(--color-ink-muted);
+    --panel-line: rgb(6 35 38 / 0.18);
+    --panel-chip: rgb(6 35 38 / 0.06);
+    --panel-numeral: rgb(10 133 140 / 0.2);
+  }
+  [data-tone="fjord"] {
+    --panel-bg: var(--color-fjord);
+    --panel-fg: #f7f5ef;
+    --panel-muted: #ddf3f1;
+    --panel-line: rgb(247 245 239 / 0.3);
+    --panel-chip: rgb(247 245 239 / 0.13);
+    --panel-numeral: rgb(165 230 226 / 0.28);
+  }
+  [data-tone="lagoon"] {
+    --panel-bg: var(--color-lagoon);
+    --panel-fg: var(--color-ink);
+    --panel-muted: #1b4548;
+    --panel-line: rgb(6 35 38 / 0.22);
+    --panel-chip: rgb(6 35 38 / 0.09);
+    --panel-numeral: rgb(6 35 38 / 0.12);
+  }
+  [data-tone="seaglass"] {
+    --panel-bg: var(--color-seaglass);
+    --panel-fg: var(--color-ink);
+    --panel-muted: #0f3336;
+    --panel-line: rgb(6 35 38 / 0.26);
+    --panel-chip: rgb(6 35 38 / 0.1);
+    --panel-numeral: rgb(6 35 38 / 0.14);
+  }
+
+  .panel {
+    background-color: var(--panel-bg);
+    color: var(--panel-fg);
+    --focus-ring: var(--panel-fg);
+  }
+  .panel-muted {
+    color: var(--panel-muted);
+  }
+  .panel-line {
+    border-color: var(--panel-line);
+  }
+  .panel-chip {
+    background-color: var(--panel-chip);
+    color: var(--panel-fg);
+  }
+  .panel-numeral {
+    color: var(--panel-numeral);
+  }
+  /* Inverse of the panel: always the highest-contrast pairing on that surface. */
+  .panel-btn {
+    background-color: var(--panel-fg);
+    color: var(--panel-bg);
+  }
+
+  /* ---- Technology ticker ---------------------------------------------------
+     Pure CSS so it runs on the compositor. Pauses on hover/focus (WCAG 2.2.2)
+     and collapses to a static wrapped list when reduced motion is requested. */
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee var(--marquee-duration, 48s) linear infinite;
+    will-change: transform;
+  }
+  .marquee-track > ul {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+  }
+  .marquee:hover .marquee-track,
+  .marquee:focus-within .marquee-track {
+    animation-play-state: paused;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-track {
+      width: auto;
+      flex-wrap: wrap;
+      animation: none;
+      will-change: auto;
+    }
+    .marquee-track > ul {
+      flex-shrink: 1;
+      flex-wrap: wrap;
+    }
+    .marquee-track > .marquee-dup {
+      display: none;
+    }
+  }
+
+  /* Native <dialog>: the visual backdrop is drawn by Motion inside the dialog. */
+  dialog::backdrop {
+    background: transparent;
+  }
+}
+
+@keyframes marquee {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
